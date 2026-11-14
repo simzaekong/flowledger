@@ -492,3 +492,7 @@ extern NSString * const NSForegroundColorAttributeName;
 + (UIColor *)secondaryLabelColor;
 + (UIColor *)tertiarySystemFillColor;
 @end
+
+@interface NSString (ShortDate)
+- (NSString *)substringFromIndex:(NSUInteger)index;
+@end

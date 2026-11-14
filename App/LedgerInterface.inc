@@ -146,7 +146,7 @@
     self.categoryButton = [self actionButton:@"카테고리" icon:@"tag" action:NULL];
     self.categoryButton.showsMenuAsPrimaryAction = YES;
     self.categoryButton.enabled = NO;
-    self.entryDateButton = [self actionButton:@"날짜" icon:@"calendar" action:@selector(showEntryCalendar)];
+    self.entryDateButton = [self actionButton:@"날짜" icon:nil action:@selector(showEntryCalendar)];
     self.entryDateButton.accessibilityLabel = @"기록 날짜";
     self.addButton = [self buttonWithTitle:@"추가" icon:@"plus" primary:YES action:@selector(addEntry)];
     self.addButton.enabled = NO;
@@ -478,10 +478,12 @@
 
 - (void)showDate:(NSDate *)date onButton:(UIButton *)button {
     UIButtonConfiguration *configuration = button.configuration;
-    configuration.title = date ? [self.dateFormat stringFromDate:date] : @"날짜";
+    NSString *fullDate = date ? [self.dateFormat stringFromDate:date] : nil;
+    configuration.title = date && button == self.entryDateButton
+        ? [fullDate substringFromIndex:5] : fullDate ?: @"날짜";
     configuration.titleLineBreakMode = NSLineBreakByTruncatingTail;
     button.configuration = configuration;
-    button.accessibilityValue = date ? configuration.title : nil;
+    button.accessibilityValue = fullDate;
 }
 
 - (NSString *)kind { return self.entryKind.selectedSegmentIndex == 1 ? @"income" : @"expense"; }
@@ -582,6 +584,7 @@
         [header.leadingAnchor constraintEqualToAnchor:safe.leadingAnchor constant:20],
         [header.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor constant:-20],
         [heading.heightAnchor constraintGreaterThanOrEqualToConstant:44],
+        [close.widthAnchor constraintEqualToConstant:64],
         [table.topAnchor constraintEqualToAnchor:header.bottomAnchor constant:8],
         [table.leadingAnchor constraintEqualToAnchor:safe.leadingAnchor],
         [table.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor],
