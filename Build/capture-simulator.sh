@@ -16,7 +16,7 @@ cleanup() {
 trap cleanup EXIT
 
 xcrun simctl list -j > "$work/simulators.json"
-read -r runtime phone < <(python3 - "$work/simulators.json" <<'PY'
+python3 - "$work/simulators.json" > "$work/selection" <<'PY'
 import json
 import sys
 
@@ -37,7 +37,7 @@ if phone is None:
     sys.exit("No compatible iPhone simulator profile was found")
 print(chosen["identifier"], phone)
 PY
-)
+read -r runtime phone < "$work/selection"
 echo "Using $phone on $runtime"
 device="$(xcrun simctl create FlowLedger-CI "$phone" "$runtime")"
 app="$work/FlowLedger.app"
