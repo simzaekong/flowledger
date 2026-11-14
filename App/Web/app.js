@@ -437,7 +437,8 @@ function validateRecord(kind, name, amount, category, date) {
   if (!name || name.length > 80 || !Number.isSafeInteger(amount) || amount <= 0 || amount > maxAmount) {
     return "이름은 80자까지, 금액은 1원~999,999,999,999원까지 입력해 주세요.";
   }
-  if (!categories[kind]?.some(item => item[0] === category)) return "카테고리를 선택해 주세요.";
+  if (!Object.hasOwn(categories, kind)) return "거래 유형은 수입 또는 지출이어야 해요.";
+  if (!categories[kind].some(item => item[0] === category)) return "카테고리를 선택해 주세요.";
   const checkDate = new Date(date + "T00:00:00Z");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < "1900-01-01" || date > "9999-12-31" ||
       !Number.isFinite(checkDate.getTime()) || checkDate.toISOString().slice(0, 10) !== date) {
@@ -465,6 +466,82 @@ async function addRecord(input) {
   draw();
   toast(created.kind === "income" ? "수입을 추가했어요" : "지출을 추가했어요");
   return "";
+}
+
+async function importRecords(text) {
+  if (loadError || locked) return {error: "지금은 기록을 가져올 수 없어요. 잠시 후 다시 시도해 주세요."};
+  let document;
+  try {
+    document = JSON.parse(text.replace(/^\uFEFF/, ""));
+  } catch {
+    return {error: "올바른 JSON 파일인지 확인해 주세요."};
+  }
+  const rows = Array.isArray(document) ? document : document?.transactions;
+  if (!Array.isArray(rows)) return {error: "거래 배열 또는 transactions 배열이 필요해요."};
+  const imported = [];
+  const existingCounts = new Map();
+  const recordsByID = new Map(records.map(item => [item.id, item]));
+  const ids = new Set(recordsByID.keys());
+  const signature = item => JSON.stringify([item.kind, item.date, item.category, item.name, item.amount]);
+  for (const item of records) {
+    const key = signature(item);
+    existingCounts.set(key, (existingCounts.get(key) ?? 0) + 1);
+  }
+  const suppliedIDs = new Set();
+  let skipped = 0;
+
+  for (const [index, row] of rows.entries()) {
+    if (!row || typeof row !== "object") return {error: (index + 1) + "번째 거래의 형식을 확인해 주세요."};
+    const kind = row.kind === "수입" ? "income" : row.kind === "지출" ? "expense" : row.kind;
+    const name = typeof row.name === "string" ? row.name.trim() : "";
+    const amount = typeof row.amount === "string" ? parseAmount(row.amount) : row.amount;
+    const category = Object.hasOwn(categories, kind)
+      ? categories[kind].find(([id, label]) => id === row.category || label === row.category)?.[0]
+      : undefined;
+    const date = typeof row.date === "string" ? row.date : "";
+    const error = validateRecord(kind, name, amount, category, date);
+    if (error) return {error: (index + 1) + "번째 거래 · " + error};
+    if (row.id != null && (typeof row.id !== "string" || !row.id.trim() || row.id.length > 256)) {
+      return {error: (index + 1) + "번째 거래의 ID를 확인해 주세요."};
+    }
+    if (row.id && suppliedIDs.has(row.id)) return {error: (index + 1) + "번째 거래의 ID가 파일 안에서 중복돼요."};
+    if (row.id) suppliedIDs.add(row.id);
+    imported.push({id: row.id ?? null, name, amount, category, date, kind});
+  }
+
+  const additions = [];
+  // Match explicit IDs first so the same existing row cannot also consume an ID-less row.
+  for (const item of imported.filter(item => item.id)) {
+    if (ids.has(item.id)) {
+      const existing = recordsByID.get(item.id);
+      const key = signature(existing);
+      existingCounts.set(key, existingCounts.get(key) - 1);
+      skipped++;
+    } else {
+      additions.push(item);
+    }
+  }
+  for (const item of imported.filter(item => !item.id)) {
+    const key = signature(item);
+    const count = existingCounts.get(key) ?? 0;
+    if (count > 0) {
+      existingCounts.set(key, count - 1);
+      skipped++;
+    } else {
+      let id;
+      do {
+        id = Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, "0")).join("");
+      } while (ids.has(id) || suppliedIDs.has(id));
+      ids.add(id);
+      additions.push({...item, id});
+    }
+  }
+  if (additions.length) {
+    if (!await save(additions.concat(records))) return {error: "가져온 기록을 저장하지 못했어요."};
+    draw();
+    if (selectedDetail) renderDetail();
+  }
+  return {added: additions.length, skipped};
 }
 
 function searchExpenses(text) {
@@ -497,7 +574,7 @@ function suggestNames(kind, text) {
     .slice(0, 3).map(([, item]) => item.name);
 }
 
-window.ledgerActions = {setPeriodUnit, movePeriod, addRecord, updateRecord, deleteRecord, openDetail, suggestNames, searchExpenses};
+window.ledgerActions = {setPeriodUnit, movePeriod, addRecord, updateRecord, deleteRecord, openDetail, suggestNames, searchExpenses, importRecords};
 get("entry-form").addEventListener("submit", async event => {
   event.preventDefault();
   const error = await addRecord({

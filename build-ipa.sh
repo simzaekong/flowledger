@@ -14,7 +14,7 @@ if [[ "$(uname -s)" == Darwin ]]; then
     sdk="$(xcrun --sdk iphoneos --show-sdk-path)"
     xcrun --sdk iphoneos clang -isysroot "$sdk" -target arm64-apple-ios16.4 \
         -fobjc-arc -fblocks -Oz -Wall -Wextra -Wno-unused-parameter \
-        -framework UIKit -framework Foundation -framework WebKit -framework CoreGraphics \
+        -framework UIKit -framework Foundation -framework WebKit -framework CoreGraphics -framework UniformTypeIdentifiers \
         -Wl,-adhoc_codesign App/main.m -o "$bundle/FlowLedger"
 else
     clang="${CLANG:-clang}"

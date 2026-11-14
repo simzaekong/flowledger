@@ -4,12 +4,13 @@ import sys
 from pathlib import Path
 
 frameworks = {
-    "Foundation": ("NSArray NSAttributedString NSDateFormatter NSDictionary NSLayoutConstraint NSLocale NSMutableArray NSBundle NSJSONSerialization NSNumber NSObject NSString NSTimeZone NSUserDefaults",
+    "Foundation": ("NSArray NSAttributedString NSData NSDateFormatter NSDictionary NSLayoutConstraint NSLocale NSMutableArray NSBundle NSJSONSerialization NSNumber NSObject NSString NSTimeZone NSUserDefaults",
                    "_NSStringFromClass _NSClassFromString"),
     "CoreFoundation": ("", "___CFConstantStringClassReference"),
     "CoreGraphics": ("", "_CGRectZero"),
-    "UIKit": ("UIAlertAction UIAlertController UIBlurEffect UIButton UIButtonConfiguration UIColor UIDatePicker UIFont UIImage UILabel UIResponder UIScreen UISearchBar UISegmentedControl UISheetPresentationControllerDetent UISwipeGestureRecognizer UIStackView UITableView UITableViewCell UITextField UIView UIViewController UIVisualEffectView UIWindow UIWindowScene UIAction UIMenu",
+    "UIKit": ("UIAlertAction UIAlertController UIBlurEffect UIButton UIButtonConfiguration UIColor UIDatePicker UIDocumentPickerViewController UIFont UIImage UILabel UIResponder UIScreen UISearchBar UISegmentedControl UISheetPresentationControllerDetent UISwipeGestureRecognizer UIStackView UITableView UITableViewCell UITextField UIView UIViewController UIVisualEffectView UIWindow UIWindowScene UIAction UIMenu",
               "_UIApplicationMain _UIFontTextStyleBody _UIFontTextStyleHeadline _UIFontTextStyleTitle2 _NSForegroundColorAttributeName"),
+    "UniformTypeIdentifiers": ("", "_UTTypeJSON"),
     "WebKit": ("WKContentWorld WKUserScript WKWebView WKWebViewConfiguration WKWebsiteDataStore", ""),
 }
 libraries = {

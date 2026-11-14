@@ -17,7 +17,7 @@
 - (void)setCornerConfiguration:(id)configuration;
 @end
 
-@interface LedgerController : UIViewController <WKUIDelegate, WKNavigationDelegate, WKScriptMessageHandlerWithReply, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate>
+@interface LedgerController : UIViewController <WKUIDelegate, WKNavigationDelegate, WKScriptMessageHandlerWithReply, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate, UIDocumentPickerDelegate>
 @property(nonatomic, strong) WKWebView *web;
 @property(nonatomic, strong) UIStackView *entryBody;
 @property(nonatomic, strong) UIButton *entryHandle;
@@ -122,7 +122,9 @@
     [summary.contentView addSubview:summaryRow];
     UIButton *search = [self buttonWithTitle:nil icon:@"magnifyingglass" primary:NO action:@selector(showExpenseSearch)];
     search.accessibilityLabel = @"지출 검색";
-    UIStackView *periodControls = [self row:@[self.periodUnit, search] spacing:8];
+    UIButton *import = [self buttonWithTitle:nil icon:@"square.and.arrow.down" primary:NO action:@selector(chooseImportFile)];
+    import.accessibilityLabel = @"거래 내역 가져오기";
+    UIStackView *periodControls = [self row:@[self.periodUnit, search, import] spacing:8];
     UIStackView *header = [[UIStackView alloc] initWithArrangedSubviews:@[periodControls, periodRow, summary]];
     header.axis = UILayoutConstraintAxisVertical;
     header.spacing = 8;
@@ -213,6 +215,7 @@
         [header.leadingAnchor constraintEqualToAnchor:safe.leadingAnchor constant:16],
         [header.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor constant:-16],
         [search.widthAnchor constraintEqualToConstant:44],
+        [import.widthAnchor constraintEqualToConstant:44],
         [periodControls.heightAnchor constraintGreaterThanOrEqualToConstant:44],
         [self.previousButton.widthAnchor constraintEqualToConstant:44],
         [self.nextButton.widthAnchor constraintEqualToConstant:44],
@@ -898,6 +901,44 @@
 
 - (void)script:(NSString *)body arguments:(NSDictionary *)arguments completion:(void (^)(id, NSError *))completion {
     [self.web callAsyncJavaScript:body arguments:arguments inFrame:nil inContentWorld:[WKContentWorld pageWorld] completionHandler:completion];
+}
+
+- (void)chooseImportFile {
+    if (!self.ledgerAvailable || self.busy || self.presentedViewController) return;
+    [self.view endEditing:YES];
+    UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc]
+        initForOpeningContentTypes:@[UTTypeJSON] asCopy:YES];
+    picker.delegate = self;
+    [self presentViewController:picker animated:YES completion:nil];
+}
+
+- (void)documentPicker:(UIDocumentPickerViewController *)picker didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
+    NSURL *url = urls.firstObject;
+    if (!url) return;
+    NSData *data = [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:NULL];
+    if (!data || data.length > 5000000) {
+        [self showError:@"파일을 읽을 수 없어요. UTF-8 JSON 파일을 5MB 이하로 나눠 주세요."];
+        return;
+    }
+    NSString *json = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    if (!json) {
+        [self showError:@"파일을 UTF-8로 저장해 주세요."];
+        return;
+    }
+    [self script:@"return await ledgerActions.importRecords(json)" arguments:@{@"json": json}
+        completion:^(id result, NSError *error) {
+            if (error || ![result isKindOfClass:[NSDictionary class]]) {
+                [self showError:@"파일을 가져오지 못했어요. 다시 시도해 주세요."];
+                return;
+            }
+            NSDictionary *summary = result;
+            if (summary[@"error"]) {
+                [self showError:summary[@"error"]];
+                return;
+            }
+            [self showError:[NSString stringWithFormat:@"%@건 추가 · 중복 %@건 건너뜀",
+                summary[@"added"], summary[@"skipped"]]];
+        }];
 }
 
 - (void)showError:(NSString *)message {

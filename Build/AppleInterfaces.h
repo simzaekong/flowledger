@@ -504,3 +504,20 @@ extern NSString * const NSForegroundColorAttributeName;
 @interface NSString (ShortDate)
 - (NSString *)substringFromIndex:(NSUInteger)index;
 @end
+
+@interface NSArray (ImportFirst)
+@property(readonly) id firstObject;
+@end
+@interface NSData : NSObject
+@property(readonly) NSUInteger length;
++ (instancetype)dataWithContentsOfURL:(NSURL *)url options:(NSUInteger)options error:(NSError **)error;
+@end
+enum { NSDataReadingMappedIfSafe = 1 };
+@class UTType;
+extern UTType * const UTTypeJSON;
+@protocol UIDocumentPickerDelegate
+@end
+@interface UIDocumentPickerViewController : UIViewController
+- (instancetype)initForOpeningContentTypes:(NSArray *)contentTypes asCopy:(BOOL)asCopy;
+@property(weak) id<UIDocumentPickerDelegate> delegate;
+@end

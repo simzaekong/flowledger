@@ -48,7 +48,7 @@ cp -R App/Web "$app/Web"
 sdk="$(xcrun --sdk iphonesimulator --show-sdk-path)"
 xcrun --sdk iphonesimulator clang -isysroot "$sdk" -target arm64-apple-ios16.4-simulator \
     -DFLOWLEDGER_SIMULATOR_PREVIEW=1 -fobjc-arc -fblocks -Wall -Wextra -Wno-unused-parameter \
-    -framework UIKit -framework Foundation -framework WebKit -framework CoreGraphics \
+    -framework UIKit -framework Foundation -framework WebKit -framework CoreGraphics -framework UniformTypeIdentifiers \
     App/main.m -o "$app/FlowLedger"
 python3 - "$app/PreviewLedger.json" <<'PY'
 from datetime import datetime, timezone

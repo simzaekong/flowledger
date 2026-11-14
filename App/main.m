@@ -1,6 +1,7 @@
 #if __has_include(<UIKit/UIKit.h>)
 #import <UIKit/UIKit.h>
 #import <WebKit/WebKit.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #else
 #import "../Build/AppleInterfaces.h"
 #endif
