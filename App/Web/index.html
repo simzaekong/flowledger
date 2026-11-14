@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>흐름 · 가계부</title>
+<link rel="stylesheet" href="app.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="segments" aria-label="집계 단위">
+    <button type="button" id="monthly" aria-pressed="true">월별</button>
+    <button type="button" id="yearly" aria-pressed="false">연별</button>
+  </div>
+</header>
+<main>
+  <div class="period">
+    <button id="previous" type="button" aria-label="이전 기간">‹</button>
+    <h2 id="period-title"></h2>
+    <button id="next" type="button" aria-label="다음 기간">›</button>
+  </div>
+  <section class="summary" aria-label="금액 요약">
+    <button id="income-summary" type="button"><span>수입</span><strong id="income-total">0원</strong></button>
+    <button id="expense-summary" type="button"><span>지출</span><strong id="expense-total">0원</strong></button>
+    <button id="balance-summary" type="button"><span>남은 금액</span><strong id="balance-total">0원</strong></button>
+  </section>
+  <section class="chart-card" aria-labelledby="chart-title">
+    <div class="chart-heading">
+      <h2 id="chart-title">돈의 흐름</h2>
+      <span id="chart-hint" hidden>가지를 눌러 상세 보기</span>
+    </div>
+    <div id="chart"></div>
+  </section>
+</main>
+
+<footer>
+  <form id="entry-form">
+    <div class="entry-heading">
+      <h2>빠른 추가</h2>
+      <div class="segments entry-kind" aria-label="빠른 추가 유형">
+        <button type="button" id="expense-kind" aria-pressed="true">지출</button>
+        <button type="button" id="income-kind" aria-pressed="false">수입</button>
+      </div>
+    </div>
+    <div class="entry-fields">
+      <input id="entry-name" aria-label="지출 이름" placeholder="지출 이름" maxlength="80" autocomplete="off" required>
+      <label class="amount-field"><input id="entry-amount" aria-label="금액" placeholder="금액" inputmode="numeric" maxlength="18" autocomplete="off" required><span>원</span></label>
+    </div>
+    <div class="entry-actions">
+      <label class="select-wrap"><select id="entry-category" aria-label="카테고리" required></select></label>
+      <button class="date-button" id="date-toggle" type="button" aria-label="기록 날짜" aria-expanded="false" title="기록 날짜">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M7 3v4m10-4v4M3 10h18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </button>
+      <button id="add-entry" type="submit">추가</button>
+    </div>
+    <label class="date-row" id="date-row" hidden>기록 날짜<input id="entry-date" type="date" required></label>
+    <p id="form-error" role="alert" hidden></p>
+  </form>
+</footer>
+<div id="feedback" role="status"></div>
+</div>
+
+<dialog id="detail" aria-labelledby="detail-title">
+  <div class="detail-head">
+    <div><p id="detail-period"></p><h2 id="detail-title"></h2></div>
+    <form method="dialog"><button aria-label="닫기" class="close" value="close">×</button></form>
+  </div>
+  <div id="detail-content">
+    <strong id="detail-total"></strong>
+    <p id="detail-note" hidden></p>
+    <ul id="detail-list"></ul>
+  </div>
+  <form id="edit-form" hidden>
+    <label>이름<input id="edit-name" maxlength="80" required></label>
+    <label>금액 (원)<input id="edit-amount" inputmode="numeric" maxlength="18" required></label>
+    <label>카테고리<select id="edit-category" required></select></label>
+    <label>날짜<input id="edit-date" type="date" min="1900-01-01" max="9999-12-31" required></label>
+    <p id="edit-error" role="alert" hidden></p>
+    <div class="edit-actions">
+      <button type="button" id="cancel-edit">취소</button>
+      <button type="submit" id="save-edit">저장</button>
+    </div>
+  </form>
+</dialog>
+
+<template id="empty-chart">
+  <div class="empty">
+    <svg width="174" height="91" viewBox="0 0 174 91" fill="none" aria-hidden="true">
+      <path d="M20 38C46 38 50 13 84 13S123 21 155 21M20 45C50 45 51 46 84 46S119 50 155 50M20 53C46 53 50 78 84 78S123 75 155 75" stroke="#8e8e93" stroke-width="10" stroke-linecap="round"/>
+      <rect x="10" y="33" width="9" height="26" rx="4.5" fill="#8e8e93"/>
+      <rect x="155" y="15" width="9" height="12" rx="4.5" fill="#8e8e93"/>
+      <rect x="155" y="44" width="9" height="12" rx="4.5" fill="#8e8e93"/>
+      <rect x="155" y="69" width="9" height="12" rx="4.5" fill="#8e8e93"/>
+    </svg>
+    <strong>이 기간에 기록이 없어요</strong>
+    <p>아래에서 수입이나 지출을 추가해 보세요.</p>
+  </div>
+</template>
+</body>
+</html>

@@ -1,0 +1,53 @@
+name: Build iPhone IPA and previews
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'App/**'
+      - 'Build/**'
+      - 'build-ipa.sh'
+      - '.github/workflows/build-ios.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'App/**'
+      - 'Build/**'
+      - 'build-ipa.sh'
+      - '.github/workflows/build-ios.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ipa:
+    runs-on: macos-26
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build arm64 IPA with the iPhoneOS SDK
+        run: |
+          xcodebuild -version
+          ./build-ipa.sh
+          unzip -t dist/FlowLedger.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FlowLedger-IPA
+          path: dist/FlowLedger.ipa
+          if-no-files-found: error
+
+  screenshots:
+    runs-on: macos-26
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - name: Capture light and dark iPhone simulator previews
+        run: |
+          xcodebuild -version
+          ./Build/capture-simulator.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FlowLedger-iPhone-screenshots
+          path: dist/screenshots/*.png
+          if-no-files-found: error
