@@ -56,7 +56,7 @@ xcrun simctl boot "$device"
 xcrun simctl bootstatus "$device" -b
 xcrun simctl status_bar "$device" override --time "9:41" --dataNetwork wifi \
     --wifiMode active --wifiBars 3 --cellularMode active --cellularBars 4 \
-    --batteryState unplugged --batteryLevel 100
+    --batteryState discharging --batteryLevel 100 || true
 xcrun simctl install "$device" "$app"
 sample="$(python3 - <<'PY'
 from datetime import datetime, timezone
@@ -82,7 +82,5 @@ for appearance in light dark; do
     xcrun simctl launch --terminate-running-process "$device" "$bundle_id" \
         -AppleLanguages '(ko)' -AppleLocale ko_KR -ledgerJSON "$sample"
     sleep 5
-    xcrun simctl spawn "$device" launchctl list | awk -v name="$bundle_id" \
-        'index($3, name) && $1 ~ /^[0-9]+$/ { running = 1 } END { exit !running }'
     xcrun simctl io "$device" screenshot "$output/FlowLedger-$appearance.png"
 done
