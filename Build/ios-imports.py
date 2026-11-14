@@ -4,12 +4,12 @@ import sys
 from pathlib import Path
 
 frameworks = {
-    "Foundation": ("NSArray NSDateFormatter NSDictionary NSLayoutConstraint NSLocale NSMutableArray NSBundle NSJSONSerialization NSNumber NSObject NSString NSTimeZone NSUserDefaults",
+    "Foundation": ("NSArray NSAttributedString NSDateFormatter NSDictionary NSLayoutConstraint NSLocale NSMutableArray NSBundle NSJSONSerialization NSNumber NSObject NSString NSTimeZone NSUserDefaults",
                    "_NSStringFromClass _NSClassFromString"),
     "CoreFoundation": ("", "___CFConstantStringClassReference"),
     "CoreGraphics": ("", "_CGRectZero"),
     "UIKit": ("UIAlertAction UIAlertController UIBlurEffect UIButton UIButtonConfiguration UIColor UIDatePicker UIFont UIImage UILabel UIResponder UIScreen UISearchBar UISegmentedControl UISwipeGestureRecognizer UIStackView UITableView UITableViewCell UITextField UIView UIViewController UIVisualEffectView UIWindow UIWindowScene UIAction UIMenu",
-              "_UIApplicationMain _UIFontTextStyleBody _UIFontTextStyleHeadline _UIFontTextStyleTitle2"),
+              "_UIApplicationMain _UIFontTextStyleBody _UIFontTextStyleHeadline _UIFontTextStyleTitle2 _NSForegroundColorAttributeName"),
     "WebKit": ("WKContentWorld WKUserScript WKWebView WKWebViewConfiguration WKWebsiteDataStore", ""),
 }
 libraries = {

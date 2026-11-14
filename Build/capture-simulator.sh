@@ -47,20 +47,14 @@ cp App/Info.plist App/AppIcon*.png "$app/"
 cp -R App/Web "$app/Web"
 sdk="$(xcrun --sdk iphonesimulator --show-sdk-path)"
 xcrun --sdk iphonesimulator clang -isysroot "$sdk" -target arm64-apple-ios16.4-simulator \
-    -fobjc-arc -fblocks -Wall -Wextra -Wno-unused-parameter \
+    -DFLOWLEDGER_SIMULATOR_PREVIEW=1 -fobjc-arc -fblocks -Wall -Wextra -Wno-unused-parameter \
     -framework UIKit -framework Foundation -framework WebKit -framework CoreGraphics \
     App/main.m -o "$app/FlowLedger"
-codesign --force --sign - "$app"
-
-xcrun simctl boot "$device"
-xcrun simctl bootstatus "$device" -b
-xcrun simctl status_bar "$device" override --time "9:41" --dataNetwork wifi \
-    --wifiMode active --wifiBars 3 --cellularMode active --cellularBars 4 \
-    --batteryState discharging --batteryLevel 100 || true
-xcrun simctl install "$device" "$app"
-sample="$(python3 - <<'PY'
+python3 - "$app/PreviewLedger.json" <<'PY'
 from datetime import datetime, timezone
+from pathlib import Path
 import json
+import sys
 
 today = datetime.now(timezone.utc).date().isoformat()
 rows = [
@@ -70,17 +64,30 @@ rows = [
     ("버스", 9400, "transport", "expense"),
     ("책", 16800, "shopping", "expense"),
 ]
-print(json.dumps([
+sample = json.dumps([
     dict(id=f"preview-{i}", name=name, amount=amount, category=category, kind=kind, date=today)
     for i, (name, amount, category, kind) in enumerate(rows)
-], ensure_ascii=False))
+], ensure_ascii=False)
+Path(sys.argv[1]).write_text(sample, encoding="utf-8")
 PY
-)"
+codesign --force --sign - "$app"
+
+xcrun simctl boot "$device"
+xcrun simctl bootstatus "$device" -b
+xcrun simctl status_bar "$device" override --time "9:41" --dataNetwork wifi \
+    --wifiMode active --wifiBars 3 --cellularMode active --cellularBars 4 \
+    --batteryState discharging --batteryLevel 100 || true
+xcrun simctl install "$device" "$app"
 bundle_id="app.flowledger.ios"
 for appearance in light dark; do
     xcrun simctl ui "$device" appearance "$appearance"
     xcrun simctl launch --terminate-running-process "$device" "$bundle_id" \
-        -AppleLanguages '(ko)' -AppleLocale ko_KR -ledgerJSON "$sample"
+        -AppleLanguages '(ko)' -AppleLocale ko_KR
     sleep 5
     xcrun simctl io "$device" screenshot "$output/FlowLedger-$appearance.png"
 done
+
+xcrun simctl launch --terminate-running-process "$device" "$bundle_id" \
+    -AppleLanguages '(ko)' -AppleLocale ko_KR -previewSearch 식비
+sleep 5
+xcrun simctl io "$device" screenshot "$output/FlowLedger-search.png"

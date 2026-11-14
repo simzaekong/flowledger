@@ -480,3 +480,15 @@ enum { UITableViewStyleInsetGrouped = 2, UITableViewCellStyleSubtitle = 3,
 @property(nonatomic, weak) id<UISearchBarDelegate> delegate;
 @end
 enum { UISearchBarStyleMinimal = 2 };
+
+@interface NSAttributedString : NSObject
+- (instancetype)initWithString:(NSString *)text attributes:(NSDictionary *)attributes;
+@end
+extern NSString * const NSForegroundColorAttributeName;
+@interface UITextField (PlaceholderAppearance)
+@property(copy) NSAttributedString *attributedPlaceholder;
+@end
+@interface UIColor (EntryAppearance)
++ (UIColor *)secondaryLabelColor;
++ (UIColor *)tertiarySystemFillColor;
+@end

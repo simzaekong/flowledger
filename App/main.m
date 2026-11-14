@@ -9,6 +9,12 @@
 
 - (void)loadLedgerInWebView:(WKWebView *)web {
     NSString *saved = [[NSUserDefaults standardUserDefaults] stringForKey:@"ledgerJSON"];
+#if FLOWLEDGER_SIMULATOR_PREVIEW
+    if (!saved) {
+        NSString *previewPath = [[NSBundle mainBundle] pathForResource:@"PreviewLedger" ofType:@"json"];
+        saved = [NSString stringWithContentsOfFile:previewPath encoding:NSUTF8StringEncoding error:NULL];
+    }
+#endif
     // JSON is injected as one expression in a user script, never as HTML.
     NSString *script = saved ? [@"window.initialLedger = " stringByAppendingString:saved] : @"window.initialLedger = []";
     WKUserContentController *content = web.configuration.userContentController;

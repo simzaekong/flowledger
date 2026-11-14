@@ -151,10 +151,9 @@
     self.addButton = [self buttonWithTitle:@"추가" icon:@"plus" primary:YES action:@selector(addEntry)];
     self.addButton.enabled = NO;
     UIStackView *actions = [self row:@[self.categoryButton, self.entryDateButton, self.addButton] spacing:3];
-    actions.distribution = UIStackViewDistributionFillEqually;
     actions.translatesAutoresizingMaskIntoConstraints = NO;
-    UIVisualEffectView *actionBar = [self glassSurfaceWithRadius:26];
-    [actionBar.contentView addSubview:actions];
+    UIView *actionBar = [UIView new];
+    [actionBar addSubview:actions];
 
     self.dateFormat = [NSDateFormatter new];
     self.dateFormat.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
@@ -250,6 +249,8 @@
         [fields.heightAnchor constraintGreaterThanOrEqualToConstant:44],
         [self.amountField.widthAnchor constraintEqualToAnchor:fields.widthAnchor multiplier:0.41],
         [actions.heightAnchor constraintGreaterThanOrEqualToConstant:44],
+        [self.entryDateButton.widthAnchor constraintEqualToConstant:82],
+        [self.addButton.widthAnchor constraintEqualToConstant:84],
         [actions.leadingAnchor constraintEqualToAnchor:actionBar.leadingAnchor constant:4],
         [actions.trailingAnchor constraintEqualToAnchor:actionBar.trailingAnchor constant:-4],
         [actions.topAnchor constraintEqualToAnchor:actionBar.topAnchor constant:4],
@@ -292,6 +293,7 @@
 - (UIButton *)actionButton:(NSString *)title icon:(NSString *)icon action:(SEL)action {
     UIButtonConfiguration *configuration = [UIButtonConfiguration plainButtonConfiguration];
     configuration.title = title;
+    configuration.titleLineBreakMode = NSLineBreakByTruncatingTail;
     if (icon) configuration.image = [UIImage systemImageNamed:icon];
     configuration.imagePadding = 4;
     configuration.baseForegroundColor = [UIColor labelColor];
@@ -322,17 +324,23 @@
 
 - (UITextField *)textFieldWithPlaceholder:(NSString *)placeholder {
     UITextField *field = [UITextField new];
-    field.placeholder = placeholder;
+    [self setPlaceholder:placeholder onField:field];
     field.accessibilityLabel = placeholder;
     field.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
     field.adjustsFontForContentSizeCategory = YES;
     field.borderStyle = UITextBorderStyleNone;
-    field.backgroundColor = [[UIColor labelColor] colorWithAlphaComponent:0.08];
+    field.backgroundColor = [UIColor tertiarySystemFillColor];
     field.layer.cornerRadius = 22;
     field.leftView = [[UIView alloc] initWithFrame:(CGRect){{0, 0}, {14, 1}}];
     field.leftViewMode = UITextFieldViewModeAlways;
     field.clearButtonMode = UITextFieldViewModeWhileEditing;
     return field;
+}
+
+- (void)setPlaceholder:(NSString *)text onField:(UITextField *)field {
+    field.placeholder = text;
+    field.attributedPlaceholder = [[NSAttributedString alloc] initWithString:text
+        attributes:@{NSForegroundColorAttributeName: [UIColor secondaryLabelColor]}];
 }
 
 - (UIButton *)buttonWithTitle:(NSString *)title icon:(NSString *)icon primary:(BOOL)primary action:(SEL)action {
@@ -344,6 +352,7 @@
         configuration = primary ? [UIButtonConfiguration filledButtonConfiguration] : [UIButtonConfiguration tintedButtonConfiguration];
     }
     configuration.title = title;
+    configuration.titleLineBreakMode = NSLineBreakByTruncatingTail;
     if (icon) configuration.image = [UIImage systemImageNamed:icon];
     configuration.imagePadding = 4;
     UIButton *button = [UIButton buttonWithConfiguration:configuration primaryAction:nil];
@@ -478,7 +487,7 @@
 - (NSString *)kind { return self.entryKind.selectedSegmentIndex == 1 ? @"income" : @"expense"; }
 
 - (void)changeEntryKind {
-    self.nameField.placeholder = self.entryKind.selectedSegmentIndex == 1 ? @"수입 이름" : @"지출 이름";
+    [self setPlaceholder:self.entryKind.selectedSegmentIndex == 1 ? @"수입 이름" : @"지출 이름" onField:self.nameField];
     self.nameField.accessibilityLabel = self.nameField.placeholder;
     self.categoryID = nil;
     self.categoryLabel = nil;
@@ -524,6 +533,14 @@
     self.ledgerAvailable = ![state[@"loadError"] boolValue];
     self.addButton.enabled = !self.busy && self.ledgerAvailable;
     if (firstState) [self updateCategoryMenu];
+#if FLOWLEDGER_SIMULATOR_PREVIEW
+    NSString *previewSearch = [[NSUserDefaults standardUserDefaults] stringForKey:@"previewSearch"];
+    if (firstState && previewSearch.length) {
+        [self showExpenseSearch];
+        self.expenseSearchBar.text = previewSearch;
+        [self refreshExpenseSearch];
+    }
+#endif
     if (!self.ledgerAvailable && firstState) [self showError:@"저장된 기록을 읽지 못했어요. 앱을 다시 열어 주세요."];
 }
 
