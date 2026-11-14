@@ -87,7 +87,8 @@ for appearance in light dark; do
     xcrun simctl io "$device" screenshot "$output/FlowLedger-$appearance.png"
 done
 
-for preview in search calendar; do
+data="$(xcrun simctl get_app_container "$device" "$bundle_id" data)"
+for preview in calendar search; do
     if [[ "$preview" == search ]]; then
         args=(-previewSearch 식비)
     else
@@ -95,6 +96,16 @@ for preview in search calendar; do
     fi
     xcrun simctl launch --terminate-running-process "$device" "$bundle_id" \
         -AppleLanguages '(ko)' -AppleLocale ko_KR "${args[@]}"
+    if [[ "$preview" == calendar ]]; then
+        for ((attempt = 0; attempt < 90; attempt++)); do
+            [[ -f "$data/tmp/calendar-ready" ]] && break
+            sleep 1
+        done
+        if [[ ! -f "$data/tmp/calendar-ready" ]]; then
+            echo "The calendar preview did not finish presenting" >&2
+            exit 1
+        fi
+    fi
     sleep 5
     xcrun simctl io "$device" screenshot "$output/FlowLedger-$preview.png"
 done

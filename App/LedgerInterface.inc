@@ -460,7 +460,14 @@
         [content.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor constant:-10],
         [bar.heightAnchor constraintGreaterThanOrEqualToConstant:44],
     ]];
-    [host presentViewController:calendar animated:YES completion:nil];
+    [host presentViewController:calendar animated:YES completion:^{
+#if FLOWLEDGER_SIMULATOR_PREVIEW
+        if ([[[NSUserDefaults standardUserDefaults] stringForKey:@"previewCalendar"] isEqualToString:@"yes"]) {
+            NSString *ready = [NSTemporaryDirectory() stringByAppendingPathComponent:@"calendar-ready"];
+            [@"ready" writeToFile:ready atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+        }
+#endif
+    }];
 }
 
 - (void)closeCalendar {
@@ -544,7 +551,8 @@
 #if FLOWLEDGER_SIMULATOR_PREVIEW
     NSString *previewSearch = [[NSUserDefaults standardUserDefaults] stringForKey:@"previewSearch"];
     if (firstState && [[[NSUserDefaults standardUserDefaults] stringForKey:@"previewCalendar"] isEqualToString:@"yes"]) {
-        [self showEntryCalendar];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)),
+            dispatch_get_main_queue(), ^{ [self showEntryCalendar]; });
     } else if (firstState && previewSearch.length) {
         [self showExpenseSearch];
         self.expenseSearchBar.text = previewSearch;
