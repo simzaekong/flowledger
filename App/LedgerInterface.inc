@@ -69,6 +69,8 @@
 @property(nonatomic, strong) UIButton *cancelEditButton;
 @property(nonatomic, strong) UILabel *editError;
 @property(nonatomic, copy) NSString *editID;
+@property(nonatomic, copy) NSString *originalEditName;
+@property(nonatomic, strong) UIButton *deleteEditButton;
 @property(nonatomic, copy) NSString *editKind;
 @property(nonatomic, copy) NSString *editCategory;
 @end
@@ -420,24 +422,19 @@
 
 - (void)showCalendarForEditor:(BOOL)editing {
     UIViewController *host = editing ? self.recordEditor : self;
-    if (host.presentedViewController) return;
+    if (!host.view.window || host.presentedViewController) return;
     [host.view endEditing:YES];
     self.editingCalendar = editing;
     UIViewController *calendar = [UIViewController new];
-    calendar.modalPresentationStyle = UIModalPresentationFormSheet;
+    calendar.modalPresentationStyle = UIModalPresentationPageSheet;
     calendar.modalInPresentation = YES;
-    calendar.sheetPresentationController.detents = @[
-        [UISheetPresentationControllerDetent customDetentWithIdentifier:@"calendar"
-            resolver:^CGFloat(id<UISheetPresentationControllerDetentResolutionContext> context) {
-                return context.maximumDetentValue < 410 ? context.maximumDetentValue : 410;
-            }],
-    ];
+    calendar.sheetPresentationController.detents = @[[UISheetPresentationControllerDetent mediumDetent]];
     calendar.view.backgroundColor = [UIColor systemGroupedBackgroundColor];
     calendar.view.tintColor = [UIColor labelColor];
 
     self.calendarPicker = [UIDatePicker new];
     self.calendarPicker.datePickerMode = UIDatePickerModeDate;
-    self.calendarPicker.preferredDatePickerStyle = UIDatePickerStyleInline;
+    self.calendarPicker.preferredDatePickerStyle = UIDatePickerStyleWheels;
     self.calendarPicker.minimumDate = [self.dateFormat dateFromString:@"1900-01-01"];
     self.calendarPicker.maximumDate = [self.dateFormat dateFromString:@"9999-12-31"];
     NSDate *current = editing ? self.editDate : self.entryDate;
@@ -708,27 +705,40 @@
 - (void)tableView:(UITableView *)table commitEditingStyle:(UITableViewCellEditingStyle)style
                                       forRowAtIndexPath:(NSIndexPath *)indexPath {
     if (style != UITableViewCellEditingStyleDelete) return;
-    NSDictionary *item = self.detailEntries[indexPath.row];
+    [self confirmDeletionOfRecord:self.detailEntries[indexPath.row] from:self.detailSheet];
+}
+
+- (void)deleteEditedRecord {
+    [self.recordEditor.view endEditing:YES];
+    [self confirmDeletionOfRecord:@{@"id": self.editID, @"name": self.originalEditName} from:self.recordEditor];
+}
+
+- (void)confirmDeletionOfRecord:(NSDictionary *)item from:(UIViewController *)host {
+    if (!host || host.presentedViewController) return;
+    [host.view endEditing:YES];
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"기록 삭제"
         message:item[@"name"] preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"취소" style:UIAlertActionStyleCancel handler:nil]];
     [alert addAction:[UIAlertAction actionWithTitle:@"삭제" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         [self script:@"return await ledgerActions.deleteRecord(recordID)" arguments:@{@"recordID": item[@"id"]}
             completion:^(id result, NSError *error) {
-                if (!error && [result isKindOfClass:[NSString class]] && ![result length]) [self refreshExpenseSearch];
-                if (error || ![result isKindOfClass:[NSString class]] || [result length]) {
-                    [self showError:!error && [result isKindOfClass:[NSString class]]
-                        ? result : @"삭제하지 못했어요. 다시 시도해 주세요."];
+                if (!error && [result isKindOfClass:[NSString class]] && ![result length]) {
+                    if (host == self.recordEditor) [self closeRecordEditor];
+                    [self refreshExpenseSearch];
+                    return;
                 }
+                [self showMessage:!error && [result isKindOfClass:[NSString class]]
+                    ? result : @"삭제하지 못했어요. 다시 시도해 주세요." from:host];
             }];
     }]];
-    [self.detailSheet presentViewController:alert animated:YES completion:nil];
+    [host presentViewController:alert animated:YES completion:nil];
 }
 
 - (void)showRecordEditor:(NSDictionary *)record {
     UIViewController *host = self.detailSheet ?: self;
     if (self.recordEditor || host.presentedViewController) return;
     self.editID = record[@"id"];
+    self.originalEditName = record[@"name"];
     self.editKind = record[@"kind"];
     self.editCategory = record[@"category"];
 
@@ -764,8 +774,12 @@
     self.editError.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
     self.editError.numberOfLines = 0;
     self.editError.hidden = YES;
+    self.deleteEditButton = [self actionButton:@"기록 삭제" icon:@"trash" action:@selector(deleteEditedRecord)];
+    UIButtonConfiguration *destructive = self.deleteEditButton.configuration;
+    destructive.baseForegroundColor = [UIColor systemRedColor];
+    self.deleteEditButton.configuration = destructive;
     UIStackView *form = [[UIStackView alloc] initWithArrangedSubviews:
-        @[top, self.editNameField, self.editAmountField, self.editCategoryButton, self.editDateButton, self.editError]];
+        @[top, self.editNameField, self.editAmountField, self.editCategoryButton, self.editDateButton, self.editError, self.deleteEditButton]];
     form.axis = UILayoutConstraintAxisVertical;
     form.spacing = 8;
     form.translatesAutoresizingMaskIntoConstraints = NO;
@@ -780,6 +794,7 @@
         [self.editAmountField.heightAnchor constraintGreaterThanOrEqualToConstant:44],
         [self.editCategoryButton.heightAnchor constraintGreaterThanOrEqualToConstant:44],
         [self.editDateButton.heightAnchor constraintGreaterThanOrEqualToConstant:44],
+        [self.deleteEditButton.heightAnchor constraintGreaterThanOrEqualToConstant:44],
     ]];
     [host presentViewController:editor animated:YES completion:nil];
 }
@@ -820,6 +835,7 @@
     };
     self.saveEditButton.enabled = NO;
     self.cancelEditButton.enabled = NO;
+    self.deleteEditButton.enabled = NO;
     [self.recordEditor.view endEditing:YES];
     [self script:@"return await ledgerActions.updateRecord(input)" arguments:@{@"input": input}
         completion:^(id result, NSError *error) {
@@ -830,6 +846,7 @@
             }
             self.saveEditButton.enabled = YES;
             self.cancelEditButton.enabled = YES;
+            self.deleteEditButton.enabled = YES;
             self.editError.text = !error && [result isKindOfClass:[NSString class]]
                 ? result : @"수정 내용을 저장하지 못했어요. 다시 시도해 주세요.";
             self.editError.hidden = NO;
@@ -942,7 +959,11 @@
 }
 
 - (void)showError:(NSString *)message {
+    [self showMessage:message from:self.detailSheet ?: self];
+}
+
+- (void)showMessage:(NSString *)message from:(UIViewController *)host {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil message:message preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"확인" style:UIAlertActionStyleCancel handler:nil]];
-    [(self.detailSheet ?: self) presentViewController:alert animated:YES completion:nil];
+    [host presentViewController:alert animated:YES completion:nil];
 }

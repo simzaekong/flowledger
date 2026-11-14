@@ -361,6 +361,7 @@ extern NSString * const UIFontTextStyleTitle2;
 
 @class UIGestureRecognizer;
 @interface UIView (PanelAppearance)
+@property(readonly) UIWindow *window;
 @property BOOL clipsToBounds;
 @property BOOL userInteractionEnabled;
 @property BOOL isAccessibilityElement;
@@ -404,7 +405,7 @@ enum { UIButtonConfigurationTitleAlignmentCenter = 2 };
 @property(getter=isModalInPresentation) BOOL modalInPresentation;
 - (void)dismissViewControllerAnimated:(BOOL)animated completion:(void (^)(void))completion;
 @end
-enum { UIModalPresentationFormSheet = 2 };
+enum { UIModalPresentationPageSheet = 1, UIModalPresentationFormSheet = 2 };
 @interface UILabel (RecordEditor)
 @property NSInteger numberOfLines;
 @end
@@ -428,18 +429,14 @@ enum { UIModalPresentationFormSheet = 2 };
 @end
 enum {
     UITextBorderStyleNone = 0, UITextFieldViewModeAlways = 3,
-    NSLineBreakByTruncatingTail = 4, UIDatePickerStyleInline = 3,
+    NSLineBreakByTruncatingTail = 4, UIDatePickerStyleWheels = 1,
     UIControlEventEditingDidBegin = 1 << 16, UIControlEventEditingChanged = 1 << 17,
     UIControlEventEditingDidEnd = 1 << 18
 };
 
 @class UISheetPresentationController, NSIndexPath, UITableView, UITableViewCell;
-@protocol UISheetPresentationControllerDetentResolutionContext
-@property(readonly) CGFloat maximumDetentValue;
-@end
 @interface UISheetPresentationControllerDetent : NSObject
-+ (instancetype)customDetentWithIdentifier:(NSString *)identifier
-    resolver:(CGFloat (^)(id<UISheetPresentationControllerDetentResolutionContext>))resolver;
++ (instancetype)mediumDetent;
 @end
 @interface UISheetPresentationController : NSObject
 @property(copy) NSArray *detents;
