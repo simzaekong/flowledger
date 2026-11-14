@@ -92,7 +92,7 @@ for preview in calendar search; do
     if [[ "$preview" == search ]]; then
         args=(-previewSearch 식비)
     else
-        args=(-previewCalendar yes)
+        args=(-previewCalendar calendar-sheet)
     fi
     xcrun simctl launch --terminate-running-process "$device" "$bundle_id" \
         -AppleLanguages '(ko)' -AppleLocale ko_KR "${args[@]}"

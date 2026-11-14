@@ -462,7 +462,7 @@
     ]];
     [host presentViewController:calendar animated:YES completion:^{
 #if FLOWLEDGER_SIMULATOR_PREVIEW
-        if ([[[NSUserDefaults standardUserDefaults] stringForKey:@"previewCalendar"] isEqualToString:@"yes"]) {
+        if ([[[NSUserDefaults standardUserDefaults] stringForKey:@"previewCalendar"] isEqualToString:@"calendar-sheet"]) {
             NSString *ready = [NSTemporaryDirectory() stringByAppendingPathComponent:@"calendar-ready"];
             [@"ready" writeToFile:ready atomically:YES encoding:NSUTF8StringEncoding error:NULL];
         }
@@ -550,7 +550,7 @@
     if (firstState) [self updateCategoryMenu];
 #if FLOWLEDGER_SIMULATOR_PREVIEW
     NSString *previewSearch = [[NSUserDefaults standardUserDefaults] stringForKey:@"previewSearch"];
-    if (firstState && [[[NSUserDefaults standardUserDefaults] stringForKey:@"previewCalendar"] isEqualToString:@"yes"]) {
+    if (firstState && [[[NSUserDefaults standardUserDefaults] stringForKey:@"previewCalendar"] isEqualToString:@"calendar-sheet"]) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)),
             dispatch_get_main_queue(), ^{ [self showEntryCalendar]; });
     } else if (firstState && previewSearch.length) {
