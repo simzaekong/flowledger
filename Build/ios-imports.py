@@ -8,7 +8,7 @@ frameworks = {
                    "_NSStringFromClass _NSClassFromString"),
     "CoreFoundation": ("", "___CFConstantStringClassReference"),
     "CoreGraphics": ("", "_CGRectZero"),
-    "UIKit": ("UIAlertAction UIAlertController UIBlurEffect UIButton UIButtonConfiguration UIColor UIDatePicker UIFont UIImage UILabel UIResponder UIScreen UISegmentedControl UISwipeGestureRecognizer UIStackView UITableView UITableViewCell UITextField UIView UIViewController UIVisualEffectView UIWindow UIWindowScene UIAction UIMenu",
+    "UIKit": ("UIAlertAction UIAlertController UIBlurEffect UIButton UIButtonConfiguration UIColor UIDatePicker UIFont UIImage UILabel UIResponder UIScreen UISearchBar UISegmentedControl UISwipeGestureRecognizer UIStackView UITableView UITableViewCell UITextField UIView UIViewController UIVisualEffectView UIWindow UIWindowScene UIAction UIMenu",
               "_UIApplicationMain _UIFontTextStyleBody _UIFontTextStyleHeadline _UIFontTextStyleTitle2"),
     "WebKit": ("WKContentWorld WKUserScript WKWebView WKWebViewConfiguration WKWebsiteDataStore", ""),
 }

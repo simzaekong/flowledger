@@ -467,6 +467,19 @@ async function addRecord(input) {
   return "";
 }
 
+function searchExpenses(text) {
+  const query = text.trim().normalize("NFC").toLocaleLowerCase("ko-KR");
+  if (!query) return [];
+  return records.filter(item => item.kind === "expense" &&
+    (item.name + " " + catalog.get(item.category)[1]).normalize("NFC")
+      .toLocaleLowerCase("ko-KR").includes(query))
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(item => ({
+      ...item, amount: String(item.amount), displayAmount: money(item.amount),
+      categoryLabel: catalog.get(item.category)[1]
+    }));
+}
+
 function suggestNames(kind, text) {
   const query = text.trim().normalize("NFC").toLocaleLowerCase("ko-KR");
   if (!query) return [];
@@ -484,7 +497,7 @@ function suggestNames(kind, text) {
     .slice(0, 3).map(([, item]) => item.name);
 }
 
-window.ledgerActions = {setPeriodUnit, movePeriod, addRecord, updateRecord, deleteRecord, openDetail, suggestNames};
+window.ledgerActions = {setPeriodUnit, movePeriod, addRecord, updateRecord, deleteRecord, openDetail, suggestNames, searchExpenses};
 get("entry-form").addEventListener("submit", async event => {
   event.preventDefault();
   const error = await addRecord({

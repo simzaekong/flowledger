@@ -17,7 +17,7 @@
 - (void)setCornerConfiguration:(id)configuration;
 @end
 
-@interface LedgerController : UIViewController <WKUIDelegate, WKNavigationDelegate, WKScriptMessageHandlerWithReply, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate>
+@interface LedgerController : UIViewController <WKUIDelegate, WKNavigationDelegate, WKScriptMessageHandlerWithReply, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate>
 @property(nonatomic, strong) WKWebView *web;
 @property(nonatomic, strong) UIStackView *entryBody;
 @property(nonatomic, strong) UIButton *entryHandle;
@@ -56,6 +56,8 @@
 @property(nonatomic, weak) UILabel *detailPeriod;
 @property(nonatomic, weak) UILabel *detailTotal;
 @property(nonatomic, weak) UILabel *detailExplanation;
+@property(nonatomic, weak) UISearchBar *expenseSearchBar;
+@property(nonatomic) NSInteger expenseSearchRequest;
 @property(nonatomic, strong) NSArray *detailEntries;
 @property(nonatomic, strong) UIViewController *recordEditor;
 @property(nonatomic, strong) UITextField *editNameField;
@@ -118,7 +120,10 @@
     summaryRow.translatesAutoresizingMaskIntoConstraints = NO;
     UIVisualEffectView *summary = [self glassSurfaceWithRadius:24];
     [summary.contentView addSubview:summaryRow];
-    UIStackView *header = [[UIStackView alloc] initWithArrangedSubviews:@[self.periodUnit, periodRow, summary]];
+    UIButton *search = [self buttonWithTitle:nil icon:@"magnifyingglass" primary:NO action:@selector(showExpenseSearch)];
+    search.accessibilityLabel = @"지출 검색";
+    UIStackView *periodControls = [self row:@[self.periodUnit, search] spacing:8];
+    UIStackView *header = [[UIStackView alloc] initWithArrangedSubviews:@[periodControls, periodRow, summary]];
     header.axis = UILayoutConstraintAxisVertical;
     header.spacing = 8;
     header.translatesAutoresizingMaskIntoConstraints = NO;
@@ -208,7 +213,8 @@
         [header.topAnchor constraintEqualToAnchor:safe.topAnchor constant:8],
         [header.leadingAnchor constraintEqualToAnchor:safe.leadingAnchor constant:16],
         [header.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor constant:-16],
-        [self.periodUnit.heightAnchor constraintGreaterThanOrEqualToConstant:34],
+        [search.widthAnchor constraintEqualToConstant:44],
+        [periodControls.heightAnchor constraintGreaterThanOrEqualToConstant:44],
         [self.previousButton.widthAnchor constraintEqualToConstant:44],
         [self.nextButton.widthAnchor constraintEqualToConstant:44],
         [periodRow.heightAnchor constraintGreaterThanOrEqualToConstant:44],
@@ -521,51 +527,101 @@
     if (!self.ledgerAvailable && firstState) [self showError:@"저장된 기록을 읽지 못했어요. 앱을 다시 열어 주세요."];
 }
 
+- (UIViewController *)makeTransactionsSheetForSearch:(BOOL)searching {
+    [self.view endEditing:YES];
+    UIViewController *sheet = [UIViewController new];
+    sheet.modalPresentationStyle = UIModalPresentationFormSheet;
+    sheet.sheetPresentationController.prefersGrabberVisible = YES;
+    sheet.view.backgroundColor = [UIColor systemGroupedBackgroundColor];
+    sheet.view.tintColor = [UIColor labelColor];
+
+    UILabel *title = [self detailLabel:UIFontTextStyleHeadline];
+    UILabel *period = [self detailLabel:UIFontTextStyleBody];
+    UILabel *total = [self detailLabel:UIFontTextStyleTitle2];
+    UILabel *explanation = [self detailLabel:UIFontTextStyleBody];
+    UIButton *close = [self actionButton:@"닫기" icon:nil action:@selector(closeDetailSheet)];
+    UIStackView *heading = [self row:@[title, close] spacing:8];
+    UISearchBar *searchBar = [UISearchBar new];
+    searchBar.searchBarStyle = UISearchBarStyleMinimal;
+    searchBar.placeholder = @"이름 또는 카테고리";
+    searchBar.delegate = self;
+    searchBar.hidden = !searching;
+    period.hidden = searching;
+    total.hidden = searching;
+    UIStackView *header = [[UIStackView alloc] initWithArrangedSubviews:@[heading, period, total, explanation, searchBar]];
+    header.axis = UILayoutConstraintAxisVertical;
+    header.spacing = 6;
+    header.translatesAutoresizingMaskIntoConstraints = NO;
+
+    UITableView *table = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleInsetGrouped];
+    table.dataSource = self;
+    table.delegate = self;
+    table.translatesAutoresizingMaskIntoConstraints = NO;
+    [sheet.view addSubview:header];
+    [sheet.view addSubview:table];
+    UILayoutGuide *safe = sheet.view.safeAreaLayoutGuide;
+    [NSLayoutConstraint activateConstraints:@[
+        [header.topAnchor constraintEqualToAnchor:safe.topAnchor constant:12],
+        [header.leadingAnchor constraintEqualToAnchor:safe.leadingAnchor constant:20],
+        [header.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor constant:-20],
+        [heading.heightAnchor constraintGreaterThanOrEqualToConstant:44],
+        [table.topAnchor constraintEqualToAnchor:header.bottomAnchor constant:8],
+        [table.leadingAnchor constraintEqualToAnchor:safe.leadingAnchor],
+        [table.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor],
+        [table.bottomAnchor constraintEqualToAnchor:safe.bottomAnchor],
+    ]];
+    self.detailSheet = sheet;
+    self.detailTitle = title;
+    self.detailPeriod = period;
+    self.detailTotal = total;
+    self.detailExplanation = explanation;
+    self.detailTable = table;
+    self.expenseSearchBar = searching ? searchBar : nil;
+    self.detailEntries = nil;
+    return sheet;
+}
+
+- (void)showExpenseSearch {
+    if (self.presentedViewController) return;
+    UIViewController *sheet = [self makeTransactionsSheetForSearch:YES];
+    self.detailTitle.text = @"지출 검색";
+    self.detailExplanation.text = @"전체 기간의 지출을 검색할 수 있어요.";
+    [self presentViewController:sheet animated:YES completion:nil];
+}
+
+- (void)searchBar:(UISearchBar *)bar textDidChange:(NSString *)text {
+    [self refreshExpenseSearch];
+}
+
+- (void)searchBarSearchButtonClicked:(UISearchBar *)bar {
+    [self.detailSheet.view endEditing:YES];
+}
+
+- (void)refreshExpenseSearch {
+    if (!self.expenseSearchBar) return;
+    NSString *query = self.expenseSearchBar.text ?: @"";
+    NSInteger request = ++self.expenseSearchRequest;
+    [self script:@"return ledgerActions.searchExpenses(query)" arguments:@{@"query": query}
+        completion:^(id result, NSError *error) {
+            if (request != self.expenseSearchRequest || !self.expenseSearchBar) return;
+            if (error || ![result isKindOfClass:[NSArray class]]) {
+                self.detailEntries = nil;
+                self.detailExplanation.text = @"검색하지 못했어요. 다시 시도해 주세요.";
+            } else {
+                self.detailEntries = result;
+                self.detailExplanation.text = !query.length ? @"전체 기간의 지출을 검색할 수 있어요."
+                    : self.detailEntries.count ? @"" : @"검색 결과가 없어요.";
+            }
+            self.detailExplanation.hidden = !self.detailExplanation.text.length;
+            [self.detailTable reloadData];
+        }];
+}
+
 - (void)showDetailSheet:(NSDictionary *)detail {
-    UIViewController *sheet = self.detailSheet;
-    if (!sheet) {
+    if (self.expenseSearchBar) return;
+    if (!self.detailSheet) {
         if (![detail[@"present"] boolValue] || self.presentedViewController) return;
-        [self.view endEditing:YES];
-        sheet = [UIViewController new];
-        sheet.modalPresentationStyle = UIModalPresentationFormSheet;
-        sheet.sheetPresentationController.prefersGrabberVisible = YES;
-        sheet.view.backgroundColor = [UIColor systemGroupedBackgroundColor];
-        sheet.view.tintColor = [UIColor labelColor];
-
-        UILabel *title = [self detailLabel:UIFontTextStyleHeadline];
-        UILabel *period = [self detailLabel:UIFontTextStyleBody];
-        UILabel *total = [self detailLabel:UIFontTextStyleTitle2];
-        UILabel *explanation = [self detailLabel:UIFontTextStyleBody];
-        UIButton *close = [self actionButton:@"닫기" icon:nil action:@selector(closeDetailSheet)];
-        UIStackView *heading = [self row:@[title, close] spacing:8];
-        UIStackView *header = [[UIStackView alloc] initWithArrangedSubviews:@[heading, period, total, explanation]];
-        header.axis = UILayoutConstraintAxisVertical;
-        header.spacing = 6;
-        header.translatesAutoresizingMaskIntoConstraints = NO;
-
-        UITableView *table = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleInsetGrouped];
-        table.dataSource = self;
-        table.delegate = self;
-        table.translatesAutoresizingMaskIntoConstraints = NO;
-        [sheet.view addSubview:header];
-        [sheet.view addSubview:table];
-        UILayoutGuide *safe = sheet.view.safeAreaLayoutGuide;
-        [NSLayoutConstraint activateConstraints:@[
-            [header.topAnchor constraintEqualToAnchor:safe.topAnchor constant:12],
-            [header.leadingAnchor constraintEqualToAnchor:safe.leadingAnchor constant:20],
-            [header.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor constant:-20],
-            [heading.heightAnchor constraintGreaterThanOrEqualToConstant:44],
-            [table.topAnchor constraintEqualToAnchor:header.bottomAnchor constant:8],
-            [table.leadingAnchor constraintEqualToAnchor:safe.leadingAnchor],
-            [table.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor],
-            [table.bottomAnchor constraintEqualToAnchor:safe.bottomAnchor],
-        ]];
-        self.detailSheet = sheet;
-        self.detailTitle = title;
-        self.detailPeriod = period;
-        self.detailTotal = total;
-        self.detailExplanation = explanation;
-        self.detailTable = table;
+        UIViewController *sheet = [self makeTransactionsSheetForSearch:NO];
         [self presentViewController:sheet animated:YES completion:nil];
     }
     self.detailTitle.text = detail[@"title"];
@@ -606,6 +662,7 @@
 
 - (void)tableView:(UITableView *)table didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [table deselectRowAtIndexPath:indexPath animated:YES];
+    [self.detailSheet.view endEditing:YES];
     [self showRecordEditor:self.detailEntries[indexPath.row]];
 }
 
@@ -619,6 +676,7 @@
     [alert addAction:[UIAlertAction actionWithTitle:@"삭제" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
         [self script:@"return await ledgerActions.deleteRecord(recordID)" arguments:@{@"recordID": item[@"id"]}
             completion:^(id result, NSError *error) {
+                if (!error && [result isKindOfClass:[NSString class]] && ![result length]) [self refreshExpenseSearch];
                 if (error || ![result isKindOfClass:[NSString class]] || [result length]) {
                     [self showError:!error && [result isKindOfClass:[NSString class]]
                         ? result : @"삭제하지 못했어요. 다시 시도해 주세요."];
@@ -728,6 +786,7 @@
         completion:^(id result, NSError *error) {
             if (!error && [result isKindOfClass:[NSString class]] && [result isEqualToString:@""]) {
                 [self closeRecordEditor];
+                [self refreshExpenseSearch];
                 return;
             }
             self.saveEditButton.enabled = YES;

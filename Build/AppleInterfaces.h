@@ -469,3 +469,14 @@ enum { UITableViewStyleInsetGrouped = 2, UITableViewCellStyleSubtitle = 3,
 @property(readonly) UILabel *detailTextLabel;
 @property NSInteger accessoryType;
 @end
+
+@class UISearchBar;
+@protocol UISearchBarDelegate
+@end
+@interface UISearchBar : UIView
+@property(nonatomic) NSInteger searchBarStyle;
+@property(nonatomic, copy) NSString *placeholder;
+@property(nonatomic, copy) NSString *text;
+@property(nonatomic, weak) id<UISearchBarDelegate> delegate;
+@end
+enum { UISearchBarStyleMinimal = 2 };
