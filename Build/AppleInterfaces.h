@@ -434,7 +434,15 @@ enum {
 };
 
 @class UISheetPresentationController, NSIndexPath, UITableView, UITableViewCell;
+@protocol UISheetPresentationControllerDetentResolutionContext
+@property(readonly) CGFloat maximumDetentValue;
+@end
+@interface UISheetPresentationControllerDetent : NSObject
++ (instancetype)customDetentWithIdentifier:(NSString *)identifier
+    resolver:(CGFloat (^)(id<UISheetPresentationControllerDetentResolutionContext>))resolver;
+@end
 @interface UISheetPresentationController : NSObject
+@property(copy) NSArray *detents;
 @property BOOL prefersGrabberVisible;
 @end
 @interface UIViewController (DetailSheet)

@@ -87,7 +87,14 @@ for appearance in light dark; do
     xcrun simctl io "$device" screenshot "$output/FlowLedger-$appearance.png"
 done
 
-xcrun simctl launch --terminate-running-process "$device" "$bundle_id" \
-    -AppleLanguages '(ko)' -AppleLocale ko_KR -previewSearch 식비
-sleep 5
-xcrun simctl io "$device" screenshot "$output/FlowLedger-search.png"
+for preview in search calendar; do
+    if [[ "$preview" == search ]]; then
+        args=(-previewSearch 식비)
+    else
+        args=(-previewCalendar yes)
+    fi
+    xcrun simctl launch --terminate-running-process "$device" "$bundle_id" \
+        -AppleLanguages '(ko)' -AppleLocale ko_KR "${args[@]}"
+    sleep 5
+    xcrun simctl io "$device" screenshot "$output/FlowLedger-$preview.png"
+done

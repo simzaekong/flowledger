@@ -9,8 +9,8 @@
     <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
     <key>CFBundleName</key><string>FlowLedger</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleShortVersionString</key><string>1.7.0</string>
-    <key>CFBundleVersion</key><string>10</string>
+    <key>CFBundleShortVersionString</key><string>1.7.1</string>
+    <key>CFBundleVersion</key><string>11</string>
     <key>CFBundleSupportedPlatforms</key><array><string>iPhoneOS</string></array>
     <key>CFBundleIcons</key><dict>
         <key>CFBundlePrimaryIcon</key><dict>

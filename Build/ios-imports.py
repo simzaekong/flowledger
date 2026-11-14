@@ -8,7 +8,7 @@ frameworks = {
                    "_NSStringFromClass _NSClassFromString"),
     "CoreFoundation": ("", "___CFConstantStringClassReference"),
     "CoreGraphics": ("", "_CGRectZero"),
-    "UIKit": ("UIAlertAction UIAlertController UIBlurEffect UIButton UIButtonConfiguration UIColor UIDatePicker UIFont UIImage UILabel UIResponder UIScreen UISearchBar UISegmentedControl UISwipeGestureRecognizer UIStackView UITableView UITableViewCell UITextField UIView UIViewController UIVisualEffectView UIWindow UIWindowScene UIAction UIMenu",
+    "UIKit": ("UIAlertAction UIAlertController UIBlurEffect UIButton UIButtonConfiguration UIColor UIDatePicker UIFont UIImage UILabel UIResponder UIScreen UISearchBar UISegmentedControl UISheetPresentationControllerDetent UISwipeGestureRecognizer UIStackView UITableView UITableViewCell UITextField UIView UIViewController UIVisualEffectView UIWindow UIWindowScene UIAction UIMenu",
               "_UIApplicationMain _UIFontTextStyleBody _UIFontTextStyleHeadline _UIFontTextStyleTitle2 _NSForegroundColorAttributeName"),
     "WebKit": ("WKContentWorld WKUserScript WKWebView WKWebViewConfiguration WKWebsiteDataStore", ""),
 }
@@ -20,7 +20,7 @@ libraries = {
         _objc_autoreleasePoolPop _objc_autoreleasePoolPush __objc_empty_cache
         _objc_autoreleaseReturnValue _objc_retainAutoreleaseReturnValue _objc_destroyWeak _objc_copyWeak
         _objc_initWeak _objc_storeWeak _objc_loadWeakRetained _objc_setProperty_nonatomic_copy ___objc_personality_v0"""),
-    "/usr/lib/libSystem.B.dylib": ("", "__NSConcreteStackBlock __Block_object_assign ___stack_chk_fail ___stack_chk_guard __Unwind_Resume"),
+    "/usr/lib/libSystem.B.dylib": ("", "__NSConcreteStackBlock __NSConcreteGlobalBlock __Block_object_assign ___stack_chk_fail ___stack_chk_guard __Unwind_Resume"),
 }
 directory = Path(sys.argv[1])
 directory.mkdir(parents=True, exist_ok=True)

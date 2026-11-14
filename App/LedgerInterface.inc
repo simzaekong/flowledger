@@ -423,6 +423,12 @@
     UIViewController *calendar = [UIViewController new];
     calendar.modalPresentationStyle = UIModalPresentationFormSheet;
     calendar.modalInPresentation = YES;
+    calendar.sheetPresentationController.detents = @[
+        [UISheetPresentationControllerDetent customDetentWithIdentifier:@"calendar"
+            resolver:^CGFloat(id<UISheetPresentationControllerDetentResolutionContext> context) {
+                return context.maximumDetentValue < 410 ? context.maximumDetentValue : 410;
+            }],
+    ];
     calendar.view.backgroundColor = [UIColor systemGroupedBackgroundColor];
     calendar.view.tintColor = [UIColor labelColor];
 
@@ -537,7 +543,9 @@
     if (firstState) [self updateCategoryMenu];
 #if FLOWLEDGER_SIMULATOR_PREVIEW
     NSString *previewSearch = [[NSUserDefaults standardUserDefaults] stringForKey:@"previewSearch"];
-    if (firstState && previewSearch.length) {
+    if (firstState && [[[NSUserDefaults standardUserDefaults] stringForKey:@"previewCalendar"] isEqualToString:@"yes"]) {
+        [self showEntryCalendar];
+    } else if (firstState && previewSearch.length) {
         [self showExpenseSearch];
         self.expenseSearchBar.text = previewSearch;
         [self refreshExpenseSearch];
